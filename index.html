@@ -555,25 +555,31 @@ function wmoDesc(code) {
 
 async function fetchWeather(lat, lng, el) {
   try {
-    const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4)
-      + '&longitude=' + lng.toFixed(4)
-      + '&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum'
-      + '&timezone=Europe%2FZurich&forecast_days=3';
-    const d = (await (await fetch(u)).json()).daily;
-    if (!d) return;
+    const u = 'https://wttr.in/' + lat.toFixed(4) + ',' + lng.toFixed(4) + '?format=j1';
+    const r = await fetch(u);
+    const data = await r.json();
     const days = ['Danas','Sutra','Prekosutra'];
-    el.innerHTML = '<div class="wx-bar">' + days.map((day,i) => {
-      const [icon, desc] = wmoDesc(d.weathercode[i]);
+    el.innerHTML = '<div class="wx-bar">' + days.map((day, i) => {
+      const w = data.weather[i];
+      const desc = w.hourly[4].weatherDesc[0].value;
+      const tmax = w.maxtempC;
+      const tmin = w.mintempC;
+      const prec = w.hourly.reduce((s,h) => s + Number(h.precipMM), 0).toFixed(1);
+      const code = Number(w.hourly[4].weatherCode);
+      const icon = code === 113 ? '☀️' : code <= 116 ? '⛅' : code <= 119 ? '☁️' :
+                   code <= 143 ? '🌫️' : code <= 176 ? '🌦️' : code <= 185 ? '🌧️' :
+                   code <= 260 ? '🌨️' : code <= 299 ? '🌦️' : code <= 399 ? '🌧️' : '⛈️';
       return '<div class="wx-day">'
         + '<div class="wx-label">' + day + '</div>'
         + '<div class="wx-icon">' + icon + '</div>'
-        + '<div class="wx-desc">' + desc + '</div>'
-        + '<div class="wx-temp"><span class="wx-hi">' + Math.round(d.temperature_2m_max[i]) + '°</span>'
-        + '<span class="wx-lo">' + Math.round(d.temperature_2m_min[i]) + '°</span></div>'
-        + '<div class="wx-prec">💧 ' + Number(d.precipitation_sum[i]||0).toFixed(1) + 'mm</div>'
+        + '<div class="wx-desc">' + desc.substring(0,12) + '</div>'
+        + '<div class="wx-temp"><span class="wx-hi">' + tmax + '°</span><span class="wx-lo">' + tmin + '°</span></div>'
+        + '<div class="wx-prec">💧 ' + prec + 'mm</div>'
         + '</div>';
     }).join('') + '</div>';
-  } catch(e) {}
+  } catch(e) {
+    el.innerHTML = '';
+  }
 }
 
 
