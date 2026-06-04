@@ -62,7 +62,7 @@ aside::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .dc{font-size:.68rem;color:var(--muted);background:var(--bg);padding:1px 5px;border-radius:8px;flex-shrink:0}
 
 /* MAIN */
-main{padding:1.75rem 2rem;overflow-y:auto}
+main{padding:1.75rem 2rem;}
 .day-sec{margin-bottom:3rem;scroll-margin-top:1rem}
 
 .day-hdr{display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;padding-bottom:.7rem;border-bottom:2px solid var(--border)}
@@ -121,13 +121,26 @@ main{padding:1.75rem 2rem;overflow-y:auto}
 .day-sec.sh{display:none}
 
 @media(max-width:680px){
-  .container{grid-template-columns:1fr}
-  aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);
-    display:flex;overflow-x:auto;overflow-y:hidden;padding:.3rem 0}
+  body { overflow-x:hidden; }
+  .container{grid-template-columns:1fr; overflow:visible;}
+  aside{
+    position:sticky;top:0;z-index:100;
+    height:auto;border-right:none;border-bottom:1px solid var(--border);
+    display:flex;overflow-x:auto;overflow-y:hidden;
+    padding:.3rem 0;
+    background:var(--surface);
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  aside::-webkit-scrollbar{display:none}
   .dn{flex-direction:column;align-items:center;text-align:center;padding:.4rem .55rem;
     min-width:60px;border-left:none;border-bottom:3px solid transparent;border-right:1px solid var(--border)}
   .dl,.dc{display:none}
   header,main{padding-left:1rem;padding-right:1rem}
+  main{overflow-y:visible;height:auto;}
+  .group-map-wrap{height:160px;}
+  .wx-bar{flex-wrap:wrap;}
+  .wx-day{min-width:80px;}
 }
 
 
@@ -515,7 +528,48 @@ function buildUI() {
     });
   }, {threshold:0.2});
   document.querySelectorAll('.day-sec').forEach(s => obs.observe(s));
+
+  // Auto-pozicioniraj na današnji ili prvi sljedeći dan
+  autoScrollToday();
 }
+
+function parseDate(datumStr) {
+  // Format: "Pet 12.6." ili "Sub 13.6." itd.
+  const m = datumStr.match(/(\d+)\.(\d+)\./);
+  if (!m) return null;
+  const day = parseInt(m[1]), month = parseInt(m[2]);
+  return new Date(2026, month - 1, day);
+}
+
+function autoScrollToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Pronađi današnji dan ili prvi sljedeći
+  let target = null;
+  for (const day of plan) {
+    const d = parseDate(day.datum);
+    if (!d) continue;
+    if (d >= today) {
+      target = day;
+      break;
+    }
+  }
+
+  // Ako nema budućih dana, uzmi zadnji
+  if (!target) target = plan[plan.length - 1];
+  if (!target) return;
+
+  // Scroll sidebar na taj dan
+  setActive(target.dan, target.boja);
+
+  // Scroll main na taj dan (kratka odgoda da se DOM renderira)
+  setTimeout(() => {
+    const el = document.getElementById('day-' + target.dan);
+    if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }, 100);
+}
+
 
 function setActive(dan, boja) {
   document.querySelectorAll('.dn').forEach(el => {
