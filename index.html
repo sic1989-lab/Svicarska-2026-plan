@@ -122,9 +122,12 @@ main{padding:1.75rem 2rem;}
 
 @media(max-width:680px){
   body { overflow-x:hidden; }
-  .container{grid-template-columns:1fr; overflow:visible;}
+  .container{grid-template-columns:1fr; overflow:visible; display:block;}
   aside{
-    position:sticky;top:0;z-index:100;
+    position:fixed;
+    top:var(--header-h, 100px);
+    left:0;right:0;
+    z-index:998;
     height:auto;border-right:none;border-bottom:1px solid var(--border);
     display:flex;overflow-x:auto;overflow-y:hidden;
     padding:.3rem 0;
@@ -133,6 +136,7 @@ main{padding:1.75rem 2rem;}
     scrollbar-width:none;
   }
   aside::-webkit-scrollbar{display:none}
+  main{ padding-top: calc(var(--aside-h, 60px) + .5rem); }
   .dn{flex-direction:column;align-items:center;text-align:center;padding:.4rem .55rem;
     min-width:60px;border-left:none;border-bottom:3px solid transparent;border-right:1px solid var(--border)}
   .dl,.dc{display:none}
@@ -638,6 +642,19 @@ async function fetchWeather(lat, lng, el) {
 
 
 buildUI();
+
+// Postavi CSS varijable za visine na mobitelu
+function setMobileHeights() {
+  const header = document.querySelector('header');
+  const aside = document.getElementById('sidebar');
+  if (!header || !aside) return;
+  const hh = header.getBoundingClientRect().height;
+  const ah = aside.getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--header-h', hh + 'px');
+  document.documentElement.style.setProperty('--aside-h', ah + 'px');
+}
+setMobileHeights();
+window.addEventListener('resize', setMobileHeights);
 </script>
 
 
